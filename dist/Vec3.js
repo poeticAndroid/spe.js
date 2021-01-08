@@ -30,6 +30,10 @@ SPE.Vec3 = class {
     return this.x * this.x + this.y * this.y + this.z * this.z
   }
 
+  dot(vec) {
+    return this.x * vec.x + this.y * vec.y + this.z * vec.z
+  }
+
   add(vec) {
     this.x += vec.x
     this.y += vec.y
@@ -40,6 +44,12 @@ SPE.Vec3 = class {
     this.x -= vec.x
     this.y -= vec.y
     this.z -= vec.z
+    return this
+  }
+  multiply(vec) {
+    this.x *= vec.x
+    this.y *= vec.y
+    this.z *= vec.z
     return this
   }
   multiplyScalar(n) {
@@ -71,4 +81,18 @@ SPE.Vec3 = class {
 
     return this
   }
+
+
+  projectOnVector(vec) {
+    const denominator = vec.lengthSq()
+    if (denominator === 0) return this.set(0, 0, 0)
+    const scalar = vec.dot(this) / denominator
+    return this.copy(vec).multiplyScalar(scalar)
+  }
+
+  projectOnPlane(planeNormal) {
+    _vector.copy(this).projectOnVector(planeNormal)
+    return this.sub(_vector)
+  }
 }
+let _vector = SPE.Vec3.reuse()
