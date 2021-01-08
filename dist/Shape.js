@@ -34,7 +34,7 @@ SPE.Shape = class {
   get volume() {
     return 1
   }
-  overlaps(shape) {}
+  overlaps(shape) { }
 }
 
 SPE.Sphere = class extends SPE.Shape {
@@ -51,13 +51,13 @@ SPE.Sphere = class extends SPE.Shape {
     if (shape instanceof SPE.Sphere) {
       overlap.point.copy(shape.worldPosition).sub(this.worldPosition)
       let dist = Math.sqrt(overlap.point.lengthSq())
-      let overlap = this.radius.x + shape.radius.x - dist
-      if (overlap < 0) {
+      let overlapLen = this.radius.x + shape.radius.x - dist
+      if (overlapLen < 0) {
         overlap.recycle()
         return false
       } else {
-        overlap.overlap.copy(overlap.point).multiplyScalar(-overlap / dist)
-        overlap.point.multiplyScalar((this.radius.x - overlap / 2) / dist).add(this.worldPosition)
+        overlap.overlap.copy(overlap.point).multiplyScalar(-overlapLen / dist)
+        overlap.point.multiplyScalar((this.radius.x - overlapLen / 2) / dist).add(this.worldPosition)
         return overlap
       }
     } else {
@@ -79,9 +79,90 @@ SPE.Box = class extends SPE.Shape {
     overlap.shapes[0] = this
     overlap.shapes[1] = shape
     if (shape instanceof SPE.Box) {
-      // TODO! Box vs Box
+      // Box vs Box
+      let proj = Vec3.reuse()
+      let max = 0
+      let thisPoints = [
+        Vec3.reuse().set(1, 1, 1),
+        Vec3.reuse().set(1, 1, -1),
+        Vec3.reuse().set(1, -1, 1),
+        Vec3.reuse().set(1, -1, -1),
+        Vec3.reuse().set(-1, 1, 1),
+        Vec3.reuse().set(-1, 1, -1),
+        Vec3.reuse().set(-1, -1, 1),
+        Vec3.reuse().set(-1, -1, -1)
+      ]
+      for (let p of thisPoints) {
+        p.multiply(this.radius).applyQuaternion(this.worldQuaternion).add(this.worldPosition)
+        max = Math.max(max, p.lengthSq())
+        // projs.push(Vec3.reuse())
+      }
+      let shapePoints = [
+        Vec3.reuse().set(1, 1, 1),
+        Vec3.reuse().set(1, 1, -1),
+        Vec3.reuse().set(1, -1, 1),
+        Vec3.reuse().set(1, -1, -1),
+        Vec3.reuse().set(-1, 1, 1),
+        Vec3.reuse().set(-1, 1, -1),
+        Vec3.reuse().set(-1, -1, 1),
+        Vec3.reuse().set(-1, -1, -1)
+      ]
+      for (let p of shapePoints) {
+        p.multiply(shape.radius).applyQuaternion(shape.worldQuaternion).add(shape.worldPosition)
+        max = Math.max(max, p.lengthSq())
+        // projs.push(Vec3.reuse())
+      }
+      let axes = [
+        Vec3.reuse().set(1, 0, 0),
+        Vec3.reuse().set(1, 0, 0),
+        Vec3.reuse().set(0, 1, 0),
+        Vec3.reuse().set(0, 1, 0),
+        Vec3.reuse().set(0, 0, 1),
+        Vec3.reuse().set(0, 0, 1)
+      ]
+      overlap.overlap.x = max * 2
+      for (let i = 0; i < axes.length; i++) {
+        let axis = axes[i]
+        let axisshape = i % 2 ? this : shape
+        axis.applyQuaternion(axisshape.worldQuaternion).multiplyScalar(max)
+        let thisMin = Infinity, thisMax = 0
+        for (let p of thisPoints) {
+          proj.copy(p).projectOnVector(axis).add(axis)
+          thisMin = Math.min(thisMin, proj.lengthSq())
+          thisMax = Math.max(thisMax, proj.lengthSq())
+        }
+        let shapeMin = Infinity, shapeMax = 0
+        for (let p of shapePoints) {
+          proj.copy(p).projectOnVector(axis).add(axis)
+          shapeMin = Math.min(shapeMin, proj.lengthSq())
+          shapeMax = Math.max(shapeMax, proj.lengthSq())
+        }
+        if (thisMin > shapeMax || thisMax < shapeMin) {
+          overlap.recycle()
+          overlap = false
+          break
+        }
+        thisMin = Math.sqrt(thisMin)
+        thisMax = Math.sqrt(thisMax)
+        shapeMin = Math.sqrt(shapeMin)
+        shapeMax = Math.sqrt(shapeMax)
+        overlap.point.projectOnPlane(axis)
+        let overlapLen = Math.min(thisMax, shapeMax) - Math.max(thisMin, shapeMin)
+        let midOverlap = (Math.min(thisMax, shapeMax) + Math.max(thisMin, shapeMin)) / 2
+        proj.multiplyScalar(midOverlap / Math.sqrt(proj.lengthSq()))
+        overlap.point.add(proj).sub(axis)
+        if (overlapLen < Math.sqrt(overlap.overlap.lengthSq())) {
+          overlap.overlap.copy(proj).multiplyScalar(overlapLen / midOverlap)
+        }
+      }
+      proj.recycle()
+      while (thisPoints.length) thisPoints.pop().recycle()
+      while (shapePoints.length) shapePoints.pop().recycle()
+      while (axes.length) axes.pop().recycle()
+      return overlap
     } else if (shape instanceof SPE.Sphere) {
       // TODO! Box vs Sphere
+      return overlap
     } else {
       overlap.recycle()
       if ((overlap = shape.overlaps(this))) overlap.flip()
