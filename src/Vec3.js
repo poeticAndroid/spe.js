@@ -7,7 +7,7 @@ SPE.Vec3 = class {
     this.y = 0
     this.z = 0
   }
-  reuse() {
+  static reuse() {
     return SPE._Vec3Pool.pop() || new SPE.Vec3()
   }
   recycle() {

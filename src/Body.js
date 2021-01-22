@@ -74,7 +74,7 @@ SPE.Body = class {
     }
   }
 
-  addShape(config) {
+  createShape(config) {
     let shape
     switch (config.type) {
       case "sphere":
@@ -219,9 +219,13 @@ SPE.Body = class {
   }
 
   sleep() {
-    if (!this.sleeping) this.world.putToSleep(this)
+    if (!this.sleeping) this.world.putBodyToSleep(this)
   }
   wakeUp() {
-    if (this.sleeping) this.world.wakeUp(this)
+    if (this.sleeping) this.world.wakeBodyUp(this)
+  }
+  remove() {
+    this.world.removeBodyById(this.id)
+    this.world = null
   }
 }

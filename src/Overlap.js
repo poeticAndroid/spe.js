@@ -7,7 +7,7 @@ SPE.Overlap = class {
     this.point = SPE.Vec3.reuse()
     this.overlap = SPE.Vec3.reuse()
   }
-  reuse() {
+  static reuse() {
     return SPE._OverlapPool.pop() || new SPE.Overlap()
   }
   recycle() {

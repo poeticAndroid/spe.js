@@ -8,7 +8,7 @@ SPE.Quaternion = class {
     this.z = 0
     this.w = 1
   }
-  reuse() {
+  static reuse() {
     return SPE._QuaternionPool.pop() || new SPE.Quaternion()
   }
   recycle() {

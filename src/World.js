@@ -7,7 +7,6 @@ SPE.World = class {
     this.impactedBodies = []
     this.gravity = SPE.Vec3.reuse().set(0)
     this.airFriction = 0
-    this.collisions = []
   }
   step() {
     for (let body of this.awakeBodies) {
@@ -24,9 +23,8 @@ SPE.World = class {
       if (bodyA.impact.count) this.impactedBodies.push(bodyA)
     }
     while (this.impactedBodies.length) this.impactedBodies.pop().applyImpact()
-    while (this.collisions.length) this.collisions.pop().recycle()
   }
-  addBody(config) {
+  createBody(config) {
     if (config.id == undefined) config.id = this.bodies.indexOf(null)
     if (config.id < 0) config.id = this.bodies.length
     let body = new SPE.Body(this)
@@ -41,14 +39,14 @@ SPE.World = class {
     this.awakeBodies.push(body)
     return body
   }
-  removeBody(id) {
+  removeBodyById(id) {
     let body = this.bodies[id]
     if (body) {
       this.putToSleep(body)
       this.bodies[id] = null
     }
   }
-  putToSleep(body) {
+  putBodyToSleep(body) {
     setTimeout(() => {
       body.velocity.set(0)
       body.angularVelocity.set(0)
@@ -59,12 +57,17 @@ SPE.World = class {
     })
     body.sleeping = true
   }
-  wakeUp(body) {
+  wakeBodyUp(body) {
     setTimeout(() => {
       let i = this.awakeBodies.indexOf(body)
       if (i < 0) this.awakeBodies.push(body)
       body.sleeping = false
     })
     body.sleeping = false
+  }
+  clear() {
+    this.bodies = []
+    this.awakeBodies = []
+    this.impactedBodies = []
   }
 }

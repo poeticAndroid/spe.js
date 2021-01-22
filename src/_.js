@@ -1,6 +1,6 @@
 /* global SPE */
 
-const SPE = SPE || {}
+const SPE = {}
 
 setInterval(() => {
   console.table({
