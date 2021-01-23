@@ -35,7 +35,7 @@ SPE.Shape = class {
     return 1
   }
   sat(axes, thisPoints, shapePoints, overlap) {
-    let proj = Vec3.reuse()
+    let proj = SPE.Vec3.reuse()
     for (let i = 0; i < axes.length; i++) {
       let axis = axes[i]
       let thisMin = Infinity, thisMax = 0
@@ -65,7 +65,7 @@ SPE.Shape = class {
       proj.multiplyScalar(midOverlap / Math.sqrt(proj.lengthSq()))
       overlap.point.add(proj).sub(axis)
       if (overlapLen < Math.sqrt(overlap.overlap.lengthSq())) {
-        overlap.overlap.copy(proj).multiplyScalar(overlapLen / midOverlap)
+        overlap.overlap.copy(proj).multiplyScalar(-overlapLen / midOverlap)
       }
     }
     proj.recycle()
@@ -119,40 +119,40 @@ SPE.Box = class extends SPE.Shape {
       // Box vs Box
       let max = 0
       let thisPoints = [
-        Vec3.reuse().set(1, 1, 1),
-        Vec3.reuse().set(1, 1, -1),
-        Vec3.reuse().set(1, -1, 1),
-        Vec3.reuse().set(1, -1, -1),
-        Vec3.reuse().set(-1, 1, 1),
-        Vec3.reuse().set(-1, 1, -1),
-        Vec3.reuse().set(-1, -1, 1),
-        Vec3.reuse().set(-1, -1, -1)
+        SPE.Vec3.reuse().set(1, 1, 1),
+        SPE.Vec3.reuse().set(1, 1, -1),
+        SPE.Vec3.reuse().set(1, -1, 1),
+        SPE.Vec3.reuse().set(1, -1, -1),
+        SPE.Vec3.reuse().set(-1, 1, 1),
+        SPE.Vec3.reuse().set(-1, 1, -1),
+        SPE.Vec3.reuse().set(-1, -1, 1),
+        SPE.Vec3.reuse().set(-1, -1, -1)
       ]
       for (let p of thisPoints) {
         p.multiply(this.radius).applyQuaternion(this.worldQuaternion).add(this.worldPosition)
         max = Math.max(max, p.lengthSq())
       }
       let shapePoints = [
-        Vec3.reuse().set(1, 1, 1),
-        Vec3.reuse().set(1, 1, -1),
-        Vec3.reuse().set(1, -1, 1),
-        Vec3.reuse().set(1, -1, -1),
-        Vec3.reuse().set(-1, 1, 1),
-        Vec3.reuse().set(-1, 1, -1),
-        Vec3.reuse().set(-1, -1, 1),
-        Vec3.reuse().set(-1, -1, -1)
+        SPE.Vec3.reuse().set(1, 1, 1),
+        SPE.Vec3.reuse().set(1, 1, -1),
+        SPE.Vec3.reuse().set(1, -1, 1),
+        SPE.Vec3.reuse().set(1, -1, -1),
+        SPE.Vec3.reuse().set(-1, 1, 1),
+        SPE.Vec3.reuse().set(-1, 1, -1),
+        SPE.Vec3.reuse().set(-1, -1, 1),
+        SPE.Vec3.reuse().set(-1, -1, -1)
       ]
       for (let p of shapePoints) {
         p.multiply(shape.radius).applyQuaternion(shape.worldQuaternion).add(shape.worldPosition)
         max = Math.max(max, p.lengthSq())
       }
       let axes = [
-        Vec3.reuse().set(1, 0, 0),
-        Vec3.reuse().set(1, 0, 0),
-        Vec3.reuse().set(0, 1, 0),
-        Vec3.reuse().set(0, 1, 0),
-        Vec3.reuse().set(0, 0, 1),
-        Vec3.reuse().set(0, 0, 1)
+        SPE.Vec3.reuse().set(1, 0, 0),
+        SPE.Vec3.reuse().set(1, 0, 0),
+        SPE.Vec3.reuse().set(0, 1, 0),
+        SPE.Vec3.reuse().set(0, 1, 0),
+        SPE.Vec3.reuse().set(0, 0, 1),
+        SPE.Vec3.reuse().set(0, 0, 1)
       ]
       overlap.overlap.x = max * 2
       for (let i = 0; i < axes.length; i++) {
@@ -169,35 +169,35 @@ SPE.Box = class extends SPE.Shape {
       // Box vs Sphere
       let max = 0
       let thisPoints = [
-        Vec3.reuse().set(1, 1, 1),
-        Vec3.reuse().set(1, 1, -1),
-        Vec3.reuse().set(1, -1, 1),
-        Vec3.reuse().set(1, -1, -1),
-        Vec3.reuse().set(-1, 1, 1),
-        Vec3.reuse().set(-1, 1, -1),
-        Vec3.reuse().set(-1, -1, 1),
-        Vec3.reuse().set(-1, -1, -1)
+        SPE.Vec3.reuse().set(1, 1, 1),
+        SPE.Vec3.reuse().set(1, 1, -1),
+        SPE.Vec3.reuse().set(1, -1, 1),
+        SPE.Vec3.reuse().set(1, -1, -1),
+        SPE.Vec3.reuse().set(-1, 1, 1),
+        SPE.Vec3.reuse().set(-1, 1, -1),
+        SPE.Vec3.reuse().set(-1, -1, 1),
+        SPE.Vec3.reuse().set(-1, -1, -1)
       ]
       for (let p of thisPoints) {
         p.multiply(this.radius).applyQuaternion(this.worldQuaternion).add(this.worldPosition)
         max = Math.max(max, p.lengthSq())
       }
       let shapePoints = [
-        Vec3.reuse().set(1, 0, 0),
-        Vec3.reuse().set(-1, 0, 0),
-        Vec3.reuse().set(0, 1, 0),
-        Vec3.reuse().set(0, -1, 0),
-        Vec3.reuse().set(0, 0, 1),
-        Vec3.reuse().set(0, 0, -1)
+        SPE.Vec3.reuse().set(1, 0, 0),
+        SPE.Vec3.reuse().set(-1, 0, 0),
+        SPE.Vec3.reuse().set(0, 1, 0),
+        SPE.Vec3.reuse().set(0, -1, 0),
+        SPE.Vec3.reuse().set(0, 0, 1),
+        SPE.Vec3.reuse().set(0, 0, -1)
       ]
       for (let p of shapePoints) {
         p.multiplyScalar(shape.radius.x).applyQuaternion(this.worldQuaternion).add(shape.worldPosition)
         max = Math.max(max, p.lengthSq())
       }
       let axes = [
-        Vec3.reuse().set(1, 0, 0),
-        Vec3.reuse().set(0, 1, 0),
-        Vec3.reuse().set(0, 0, 1)
+        SPE.Vec3.reuse().set(1, 0, 0),
+        SPE.Vec3.reuse().set(0, 1, 0),
+        SPE.Vec3.reuse().set(0, 0, 1)
       ]
       overlap.overlap.x = max * 2
       for (let i = 0; i < axes.length; i++) {

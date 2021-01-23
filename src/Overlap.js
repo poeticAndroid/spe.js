@@ -11,7 +11,6 @@ SPE.Overlap = class {
     return SPE._OverlapPool.pop() || new SPE.Overlap()
   }
   recycle() {
-    // while (this.shapes.length) this.shapes.pop().body.collision = null
     SPE._OverlapPool.push(this)
   }
   flip() {

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="refresh" content="16" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>spe.js test</title>
+  <script src="../dist/spe.js"></script>
+  <script src="https://aframe.io/releases/1.1.0/aframe.min.js"></script>
+  <script src="./utils.js"></script>
+  <script src="./a-spe.js"></script>
+</head>
+
+<body>
+  <a-scene physics>
+    <a-assets>
+      <img id="grid" src="./grid.png" />
+    </a-assets>
+    <a-sky src="#grid" material="repeat: 4 2" color="#123"></a-sky>
+    <a-entity position="0 -0.5 0" body="type:static">
+      <a-box src="#grid" material="repeat: 32 32" width="64" height="1" depth="64" color="#090"></a-box>
+    </a-entity>
+    <a-entity position="-2 5 -4" body="type:dynamic">
+      <a-box src="#grid" color="#963"></a-box>
+    </a-entity>
+    <a-entity position="2 80 -4" body="type:dynamic">
+      <a-sphere src="#grid" material="repeat: 2 1" color="#963" radius=".5"></a-sphere>
+    </a-entity>
+  </a-scene>
+</body>
+
+</html>

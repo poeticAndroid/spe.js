@@ -16,7 +16,7 @@ SPE.World = class {
       if (!bodyA) continue
       for (let bodyB of this.awakeBodies) {
         if (!bodyB) continue
-        if (bodyA.id <= bodyB.id) continue
+        if (bodyA.id >= bodyB.id) continue
         if (!(bodyA.collisionMask & bodyB.collisionMask)) continue
         bodyA.collideWith(bodyB)
       }
