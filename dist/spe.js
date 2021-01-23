@@ -121,12 +121,10 @@ SPE.Body = class {
 
   collideWith(body) {
     if (this.type + body.type === "staticstatic") return false
-    let delta = SPE.Vec3.reuse()
-      .copy(body.position)
-      .sub(this.position)
-    let distSq = delta.lengthSq()
+    let delta = SPE.Vec3.reuse().copy(body.position).sub(this.position)
+    let dist = delta.length()
     delta.recycle()
-    if (distSq > (this.radius + body.radius) * (this.radius + body.radius)) return false
+    if (dist > this.radius + body.radius) return false
 
     let massRatio = body.mass / (this.mass + body.mass)
     if (this.type === "static") massRatio = 0
@@ -157,15 +155,9 @@ SPE.Body = class {
 
     if (count) {
       point.multiplyScalar(1 / count)
-      let relForce = SPE.Vec3.reuse()
-        .copy(this.velocity)
-        .multiplyScalar(-1)
-      let startPos = SPE.Vec3.reuse()
-        .copy(point)
-        .sub(this.position)
-      let endPos = SPE.Vec3.reuse()
-        .copy(startPos)
-        .applyQuaternion(this.angularVelocity)
+      let relForce = SPE.Vec3.reuse().copy(this.velocity).multiplyScalar(-1)
+      let startPos = SPE.Vec3.reuse().copy(point).sub(this.position)
+      let endPos = SPE.Vec3.reuse().copy(startPos).applyQuaternion(this.angularVelocity)
       relForce.add(endPos.sub(startPos).multiplyScalar(-1))
 
       relForce.add(body.velocity)
@@ -175,10 +167,7 @@ SPE.Body = class {
 
       this.impact.force.add(nudge.copy(relForce).multiplyScalar(massRatio))
       body.impact.force.add(
-        nudge
-          .copy(relForce)
-          .multiplyScalar(-1)
-          .multiplyScalar(1 - massRatio)
+        nudge.copy(relForce).multiplyScalar(-1).multiplyScalar(1 - massRatio)
       )
 
       relForce.recycle()
@@ -205,22 +194,14 @@ SPE.Body = class {
 
   applyImpulse(point, force) {
     if (this.type === "static") return this.sleep()
-    if (force.lengthSq() > this.radius / 1024) this.wakeUp()
-    let fromPos = SPE.Vec3.reuse()
-      .copy(point)
-      .sub(this.position)
-    let toPos = SPE.Vec3.reuse()
-      .copy(fromPos)
-      .add(force)
-    if (fromPos.lengthSq() === 0 || toPos.lengthSq() === 0) {
+    if (force.length() > this.radius / 1024) this.wakeUp()
+    let fromPos = SPE.Vec3.reuse().copy(point).sub(this.position)
+    let toPos = SPE.Vec3.reuse().copy(fromPos).add(force)
+    if (fromPos.length() === 0 || toPos.length() === 0) {
       this.velocity.add(force)
     } else {
-      let fromNorm = SPE.Vec3.reuse()
-        .copy(fromPos)
-        .multiplyScalar(1 / Math.sqrt(fromPos.lengthSq()))
-      let toNorm = SPE.Vec3.reuse()
-        .copy(toPos)
-        .multiplyScalar(1 / Math.sqrt(toPos.lengthSq()))
+      let fromNorm = SPE.Vec3.reuse().copy(fromPos).multiplyScalar(1 / fromPos.length())
+      let toNorm = SPE.Vec3.reuse().copy(toPos).multiplyScalar(1 / toPos.length())
       let angularForce = SPE.Quaternion.reuse().setFromUnitVectors(fromNorm, toNorm)
 
       this.angularVelocity.multiply(angularForce)
@@ -259,6 +240,7 @@ SPE.Overlap = class {
     return SPE._OverlapPool.pop() || new SPE.Overlap()
   }
   recycle() {
+    this.point.set(0)
     SPE._OverlapPool.push(this)
   }
   flip() {
@@ -398,10 +380,7 @@ SPE.Shape = class {
   }
   get worldPosition() {
     if (this._worldPosition) return this._worldPosition
-    return (this._worldPosition = SPE.Vec3.reuse()
-      .copy(this.position)
-      .applyQuaternion(this.body.quaternion)
-      .add(this.body.position))
+    return (this._worldPosition = SPE.Vec3.reuse().copy(this.position).applyQuaternion(this.body.quaternion).add(this.body.position))
   }
   set worldPosition(x) {
     if (this._worldPosition) this._worldPosition.recycle()
@@ -409,16 +388,14 @@ SPE.Shape = class {
   }
   get worldQuaternion() {
     if (this._worldQuaternion) return this._worldQuaternion
-    return (this._worldQuaternion = SPE.Quaternion.reuse()
-      .copy(this.quaternion)
-      .multiply(this.body.quaternion))
+    return (this._worldQuaternion = SPE.Quaternion.reuse().copy(this.quaternion).multiply(this.body.quaternion))
   }
   set worldQuaternion(x) {
     if (this._worldQuaternion) this._worldQuaternion.recycle()
     this._worldQuaternion = null
   }
   get outerRadius() {
-    return Math.sqrt(this.position.lengthSq()) + Math.max(this.radius.x, this.radius.y, this.radius.z)
+    return this.position.length() + Math.max(this.radius.x, this.radius.y, this.radius.z)
   }
   get volume() {
     return 1
@@ -430,30 +407,26 @@ SPE.Shape = class {
       let thisMin = Infinity, thisMax = 0
       for (let p of thisPoints) {
         proj.copy(p).projectOnVector(axis).add(axis)
-        thisMin = Math.min(thisMin, proj.lengthSq())
-        thisMax = Math.max(thisMax, proj.lengthSq())
+        thisMin = Math.min(thisMin, proj.length())
+        thisMax = Math.max(thisMax, proj.length())
       }
       let shapeMin = Infinity, shapeMax = 0
       for (let p of shapePoints) {
         proj.copy(p).projectOnVector(axis).add(axis)
-        shapeMin = Math.min(shapeMin, proj.lengthSq())
-        shapeMax = Math.max(shapeMax, proj.lengthSq())
+        shapeMin = Math.min(shapeMin, proj.length())
+        shapeMax = Math.max(shapeMax, proj.length())
       }
       if (thisMin > shapeMax || thisMax < shapeMin) {
         overlap.recycle()
         overlap = false
         break
       }
-      thisMin = Math.sqrt(thisMin)
-      thisMax = Math.sqrt(thisMax)
-      shapeMin = Math.sqrt(shapeMin)
-      shapeMax = Math.sqrt(shapeMax)
       overlap.point.projectOnPlane(axis)
       let overlapLen = Math.min(thisMax, shapeMax) - Math.max(thisMin, shapeMin)
       let midOverlap = (Math.min(thisMax, shapeMax) + Math.max(thisMin, shapeMin)) / 2
-      proj.multiplyScalar(midOverlap / Math.sqrt(proj.lengthSq()))
+      proj.multiplyScalar(midOverlap / proj.length())
       overlap.point.add(proj).sub(axis)
-      if (overlapLen < Math.sqrt(overlap.overlap.lengthSq())) {
+      if (overlapLen < overlap.overlap.length()) {
         overlap.overlap.copy(proj).multiplyScalar(-overlapLen / midOverlap)
       }
     }
@@ -465,7 +438,7 @@ SPE.Shape = class {
 
 SPE.Sphere = class extends SPE.Shape {
   get outerRadius() {
-    return Math.sqrt(this.position.lengthSq()) + this.radius.x
+    return this.position.length() + this.radius.x
   }
   get volume() {
     return (4 / 3) * Math.PI * this.radius.x * this.radius.x * this.radius.x
@@ -476,7 +449,7 @@ SPE.Sphere = class extends SPE.Shape {
     overlap.shapes[1] = shape
     if (shape instanceof SPE.Sphere) {
       overlap.point.copy(shape.worldPosition).sub(this.worldPosition)
-      let dist = Math.sqrt(overlap.point.lengthSq())
+      let dist = overlap.point.length()
       let overlapLen = this.radius.x + shape.radius.x - dist
       if (overlapLen < 0) {
         overlap.recycle()
@@ -495,7 +468,7 @@ SPE.Sphere = class extends SPE.Shape {
 }
 SPE.Box = class extends SPE.Shape {
   get outerRadius() {
-    return Math.sqrt(this.position.lengthSq()) + Math.sqrt(this.radius.lengthSq())
+    return this.position.length() + this.radius.length()
   }
   get volume() {
     return this.radius.x * this.radius.y * this.radius.z * 8
@@ -633,6 +606,9 @@ SPE.Vec3 = class {
     return this
   }
 
+  length() {
+    return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z)
+  }
   lengthSq() {
     return this.x * this.x + this.y * this.y + this.z * this.z
   }

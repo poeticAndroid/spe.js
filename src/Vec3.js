@@ -26,6 +26,9 @@ SPE.Vec3 = class {
     return this
   }
 
+  length() {
+    return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z)
+  }
   lengthSq() {
     return this.x * this.x + this.y * this.y + this.z * this.z
   }

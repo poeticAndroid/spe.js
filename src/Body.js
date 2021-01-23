@@ -104,12 +104,10 @@ SPE.Body = class {
 
   collideWith(body) {
     if (this.type + body.type === "staticstatic") return false
-    let delta = SPE.Vec3.reuse()
-      .copy(body.position)
-      .sub(this.position)
-    let distSq = delta.lengthSq()
+    let delta = SPE.Vec3.reuse().copy(body.position).sub(this.position)
+    let dist = delta.length()
     delta.recycle()
-    if (distSq > (this.radius + body.radius) * (this.radius + body.radius)) return false
+    if (dist > this.radius + body.radius) return false
 
     let massRatio = body.mass / (this.mass + body.mass)
     if (this.type === "static") massRatio = 0
@@ -140,15 +138,9 @@ SPE.Body = class {
 
     if (count) {
       point.multiplyScalar(1 / count)
-      let relForce = SPE.Vec3.reuse()
-        .copy(this.velocity)
-        .multiplyScalar(-1)
-      let startPos = SPE.Vec3.reuse()
-        .copy(point)
-        .sub(this.position)
-      let endPos = SPE.Vec3.reuse()
-        .copy(startPos)
-        .applyQuaternion(this.angularVelocity)
+      let relForce = SPE.Vec3.reuse().copy(this.velocity).multiplyScalar(-1)
+      let startPos = SPE.Vec3.reuse().copy(point).sub(this.position)
+      let endPos = SPE.Vec3.reuse().copy(startPos).applyQuaternion(this.angularVelocity)
       relForce.add(endPos.sub(startPos).multiplyScalar(-1))
 
       relForce.add(body.velocity)
@@ -158,10 +150,7 @@ SPE.Body = class {
 
       this.impact.force.add(nudge.copy(relForce).multiplyScalar(massRatio))
       body.impact.force.add(
-        nudge
-          .copy(relForce)
-          .multiplyScalar(-1)
-          .multiplyScalar(1 - massRatio)
+        nudge.copy(relForce).multiplyScalar(-1).multiplyScalar(1 - massRatio)
       )
 
       relForce.recycle()
@@ -188,22 +177,14 @@ SPE.Body = class {
 
   applyImpulse(point, force) {
     if (this.type === "static") return this.sleep()
-    if (force.lengthSq() > this.radius / 1024) this.wakeUp()
-    let fromPos = SPE.Vec3.reuse()
-      .copy(point)
-      .sub(this.position)
-    let toPos = SPE.Vec3.reuse()
-      .copy(fromPos)
-      .add(force)
-    if (fromPos.lengthSq() === 0 || toPos.lengthSq() === 0) {
+    if (force.length() > this.radius / 1024) this.wakeUp()
+    let fromPos = SPE.Vec3.reuse().copy(point).sub(this.position)
+    let toPos = SPE.Vec3.reuse().copy(fromPos).add(force)
+    if (fromPos.length() === 0 || toPos.length() === 0) {
       this.velocity.add(force)
     } else {
-      let fromNorm = SPE.Vec3.reuse()
-        .copy(fromPos)
-        .multiplyScalar(1 / Math.sqrt(fromPos.lengthSq()))
-      let toNorm = SPE.Vec3.reuse()
-        .copy(toPos)
-        .multiplyScalar(1 / Math.sqrt(toPos.lengthSq()))
+      let fromNorm = SPE.Vec3.reuse().copy(fromPos).multiplyScalar(1 / fromPos.length())
+      let toNorm = SPE.Vec3.reuse().copy(toPos).multiplyScalar(1 / toPos.length())
       let angularForce = SPE.Quaternion.reuse().setFromUnitVectors(fromNorm, toNorm)
 
       this.angularVelocity.multiply(angularForce)

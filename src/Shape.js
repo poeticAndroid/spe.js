@@ -9,10 +9,7 @@ SPE.Shape = class {
   }
   get worldPosition() {
     if (this._worldPosition) return this._worldPosition
-    return (this._worldPosition = SPE.Vec3.reuse()
-      .copy(this.position)
-      .applyQuaternion(this.body.quaternion)
-      .add(this.body.position))
+    return (this._worldPosition = SPE.Vec3.reuse().copy(this.position).applyQuaternion(this.body.quaternion).add(this.body.position))
   }
   set worldPosition(x) {
     if (this._worldPosition) this._worldPosition.recycle()
@@ -20,16 +17,14 @@ SPE.Shape = class {
   }
   get worldQuaternion() {
     if (this._worldQuaternion) return this._worldQuaternion
-    return (this._worldQuaternion = SPE.Quaternion.reuse()
-      .copy(this.quaternion)
-      .multiply(this.body.quaternion))
+    return (this._worldQuaternion = SPE.Quaternion.reuse().copy(this.quaternion).multiply(this.body.quaternion))
   }
   set worldQuaternion(x) {
     if (this._worldQuaternion) this._worldQuaternion.recycle()
     this._worldQuaternion = null
   }
   get outerRadius() {
-    return Math.sqrt(this.position.lengthSq()) + Math.max(this.radius.x, this.radius.y, this.radius.z)
+    return this.position.length() + Math.max(this.radius.x, this.radius.y, this.radius.z)
   }
   get volume() {
     return 1
@@ -41,30 +36,26 @@ SPE.Shape = class {
       let thisMin = Infinity, thisMax = 0
       for (let p of thisPoints) {
         proj.copy(p).projectOnVector(axis).add(axis)
-        thisMin = Math.min(thisMin, proj.lengthSq())
-        thisMax = Math.max(thisMax, proj.lengthSq())
+        thisMin = Math.min(thisMin, proj.length())
+        thisMax = Math.max(thisMax, proj.length())
       }
       let shapeMin = Infinity, shapeMax = 0
       for (let p of shapePoints) {
         proj.copy(p).projectOnVector(axis).add(axis)
-        shapeMin = Math.min(shapeMin, proj.lengthSq())
-        shapeMax = Math.max(shapeMax, proj.lengthSq())
+        shapeMin = Math.min(shapeMin, proj.length())
+        shapeMax = Math.max(shapeMax, proj.length())
       }
       if (thisMin > shapeMax || thisMax < shapeMin) {
         overlap.recycle()
         overlap = false
         break
       }
-      thisMin = Math.sqrt(thisMin)
-      thisMax = Math.sqrt(thisMax)
-      shapeMin = Math.sqrt(shapeMin)
-      shapeMax = Math.sqrt(shapeMax)
       overlap.point.projectOnPlane(axis)
       let overlapLen = Math.min(thisMax, shapeMax) - Math.max(thisMin, shapeMin)
       let midOverlap = (Math.min(thisMax, shapeMax) + Math.max(thisMin, shapeMin)) / 2
-      proj.multiplyScalar(midOverlap / Math.sqrt(proj.lengthSq()))
+      proj.multiplyScalar(midOverlap / proj.length())
       overlap.point.add(proj).sub(axis)
-      if (overlapLen < Math.sqrt(overlap.overlap.lengthSq())) {
+      if (overlapLen < overlap.overlap.length()) {
         overlap.overlap.copy(proj).multiplyScalar(-overlapLen / midOverlap)
       }
     }
@@ -76,7 +67,7 @@ SPE.Shape = class {
 
 SPE.Sphere = class extends SPE.Shape {
   get outerRadius() {
-    return Math.sqrt(this.position.lengthSq()) + this.radius.x
+    return this.position.length() + this.radius.x
   }
   get volume() {
     return (4 / 3) * Math.PI * this.radius.x * this.radius.x * this.radius.x
@@ -87,7 +78,7 @@ SPE.Sphere = class extends SPE.Shape {
     overlap.shapes[1] = shape
     if (shape instanceof SPE.Sphere) {
       overlap.point.copy(shape.worldPosition).sub(this.worldPosition)
-      let dist = Math.sqrt(overlap.point.lengthSq())
+      let dist = overlap.point.length()
       let overlapLen = this.radius.x + shape.radius.x - dist
       if (overlapLen < 0) {
         overlap.recycle()
@@ -106,7 +97,7 @@ SPE.Sphere = class extends SPE.Shape {
 }
 SPE.Box = class extends SPE.Shape {
   get outerRadius() {
-    return Math.sqrt(this.position.lengthSq()) + Math.sqrt(this.radius.lengthSq())
+    return this.position.length() + this.radius.length()
   }
   get volume() {
     return this.radius.x * this.radius.y * this.radius.z * 8

@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="refresh" content="16" />
+  <meta http-equiv="refresh" content="8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>spe.js test</title>
   <script src="../dist/spe.js"></script>
@@ -17,15 +17,14 @@
     <a-assets>
       <img id="grid" src="./grid.png" />
     </a-assets>
+    <a-camera position="116 106.5 116" look-controls="pointerLockEnabled:true"></a-camera>
     <a-sky src="#grid" material="repeat: 4 2" color="#123"></a-sky>
-    <a-entity position="0 -0.5 0" body="type:static">
+    <a-entity position="105 105 105" body="type:static">
       <a-box src="#grid" material="repeat: 32 32" width="64" height="1" depth="64" color="#090"></a-box>
     </a-entity>
-    <a-entity position="-2 5 -4" body="type:dynamic">
+
+    <a-entity position="116 115 113" rotation="1 2 3" body="type:dynamic">
       <a-box src="#grid" color="#963"></a-box>
-    </a-entity>
-    <a-entity position="2 80 -4" body="type:dynamic">
-      <a-sphere src="#grid" material="repeat: 2 1" color="#963" radius=".5"></a-sphere>
     </a-entity>
   </a-scene>
 </body>
