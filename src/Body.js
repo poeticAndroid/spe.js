@@ -55,9 +55,13 @@ SPE.Body = class {
       this.velocity.add(force)
       this.velocity.add(this.force)
       this.position.add(this.velocity)
+
+      let norot = SPE.Quaternion.reuse().set(0)
+      // this.angularVelocity.slerp(norot, this.world.airFriction)
       this.angularVelocity.multiply(this.angularForce)
       this.quaternion.multiply(this.angularVelocity)
       force.recycle()
+      norot.recycle()
     }
     if (this.type === "kinematic") {
       this._lastPosition = this._lastPosition || SPE.Vec3.reuse().copy(this.position)
@@ -176,6 +180,8 @@ SPE.Body = class {
   }
 
   applyImpulse(point, force) {
+    document.querySelector("#crosshair").object3D.position.copy(point)
+    document.querySelector("#crosshair a-box").object3D.position.copy(force).multiplyScalar(64)
     if (this.type === "static") return this.sleep()
     if (force.length() > this.radius / 1024) this.wakeUp()
     let fromPos = SPE.Vec3.reuse().copy(point).sub(this.position)

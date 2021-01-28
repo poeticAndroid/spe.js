@@ -72,9 +72,13 @@ SPE.Body = class {
       this.velocity.add(force)
       this.velocity.add(this.force)
       this.position.add(this.velocity)
+
+      let norot = SPE.Quaternion.reuse().set(0)
+      // this.angularVelocity.slerp(norot, this.world.airFriction)
       this.angularVelocity.multiply(this.angularForce)
       this.quaternion.multiply(this.angularVelocity)
       force.recycle()
+      norot.recycle()
     }
     if (this.type === "kinematic") {
       this._lastPosition = this._lastPosition || SPE.Vec3.reuse().copy(this.position)
@@ -193,6 +197,8 @@ SPE.Body = class {
   }
 
   applyImpulse(point, force) {
+    document.querySelector("#crosshair").object3D.position.copy(point)
+    document.querySelector("#crosshair a-box").object3D.position.copy(force).multiplyScalar(64)
     if (this.type === "static") return this.sleep()
     if (force.length() > this.radius / 1024) this.wakeUp()
     let fromPos = SPE.Vec3.reuse().copy(point).sub(this.position)
@@ -240,7 +246,7 @@ SPE.Overlap = class {
     return SPE._OverlapPool.pop() || new SPE.Overlap()
   }
   recycle() {
-    this.point.set(0)
+    // this.point.set(0)
     SPE._OverlapPool.push(this)
   }
   flip() {
@@ -368,6 +374,72 @@ SPE.Quaternion = class {
 
     return this
   }
+
+  slerp(qb, t) {
+    if (t === 0) return this;
+    if (t === 1) return this.copy(qb);
+
+    const x = this.x, y = this.y, z = this.z, w = this.w;
+
+    // http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/
+
+    let cosHalfTheta = w * qb.w + x * qb.x + y * qb.y + z * qb.z;
+
+    if (cosHalfTheta < 0) {
+
+      this.w = - qb.w;
+      this.x = - qb.x;
+      this.y = - qb.y;
+      this.z = - qb.z;
+
+      cosHalfTheta = - cosHalfTheta;
+
+    } else {
+
+      this.copy(qb);
+
+    }
+
+    if (cosHalfTheta >= 1.0) {
+
+      this.w = w;
+      this.x = x;
+      this.y = y;
+      this.z = z;
+
+      return this;
+
+    }
+
+    const sqrSinHalfTheta = 1.0 - cosHalfTheta * cosHalfTheta;
+
+    if (sqrSinHalfTheta <= Number.EPSILON) {
+
+      const s = 1 - t;
+      this.w = s * w + t * this.w;
+      this.x = s * x + t * this.x;
+      this.y = s * y + t * this.y;
+      this.z = s * z + t * this.z;
+
+      this.normalize();
+
+      return this;
+
+    }
+
+    const sinHalfTheta = Math.sqrt(sqrSinHalfTheta);
+    const halfTheta = Math.atan2(sinHalfTheta, cosHalfTheta);
+    const ratioA = Math.sin((1 - t) * halfTheta) / sinHalfTheta,
+      ratioB = Math.sin(t * halfTheta) / sinHalfTheta;
+
+    this.w = (w * ratioA + this.w * ratioB);
+    this.x = (x * ratioA + this.x * ratioB);
+    this.y = (y * ratioA + this.y * ratioB);
+    this.z = (z * ratioA + this.z * ratioB);
+
+    return this;
+
+  }
 }
 /* global SPE */
 
@@ -402,35 +474,122 @@ SPE.Shape = class {
   }
   sat(axes, thisPoints, shapePoints, overlap) {
     let proj = SPE.Vec3.reuse()
+    let midbb = SPE.Vec3.reuse()
+    // overlap.point.set(0)
+    // for (let p of thisPoints) {
+    //   overlap.point.add(p)
+    // }
+    // for (let p of shapePoints) {
+    //   overlap.point.add(p)
+    // }
+    // overlap.point.multiplyScalar(1 / (thisPoints.length + shapePoints.length))
+
+    if (overlap) {
+      let thisMin = Infinity, thisMax = -Infinity
+      for (let p of thisPoints) {
+        thisMin = Math.min(thisMin, p.x)
+        thisMax = Math.max(thisMax, p.x)
+      }
+      let shapeMin = Infinity, shapeMax = -Infinity
+      for (let p of shapePoints) {
+        shapeMin = Math.min(shapeMin, p.x)
+        shapeMax = Math.max(shapeMax, p.x)
+      }
+      midbb.x = (Math.min(thisMax, shapeMax) + Math.max(thisMin, shapeMin)) / 2
+
+      thisMin = Infinity, thisMax = -Infinity
+      for (let p of thisPoints) {
+        thisMin = Math.min(thisMin, p.y)
+        thisMax = Math.max(thisMax, p.y)
+      }
+      shapeMin = Infinity, shapeMax = -Infinity
+      for (let p of shapePoints) {
+        shapeMin = Math.min(shapeMin, p.y)
+        shapeMax = Math.max(shapeMax, p.y)
+      }
+      midbb.y = (Math.min(thisMax, shapeMax) + Math.max(thisMin, shapeMin)) / 2
+
+      thisMin = Infinity, thisMax = -Infinity
+      for (let p of thisPoints) {
+        thisMin = Math.min(thisMin, p.z)
+        thisMax = Math.max(thisMax, p.z)
+      }
+      shapeMin = Infinity, shapeMax = -Infinity
+      for (let p of shapePoints) {
+        shapeMin = Math.min(shapeMin, p.z)
+        shapeMax = Math.max(shapeMax, p.z)
+      }
+      midbb.z = (Math.min(thisMax, shapeMax) + Math.max(thisMin, shapeMin)) / 2
+    }
+
     for (let i = 0; i < axes.length; i++) {
       let axis = axes[i]
-      let thisMin = Infinity, thisMax = 0
+      let thisMin = Infinity, thisMax = -Infinity
+      let thisMinP, thisMaxP
       for (let p of thisPoints) {
-        proj.copy(p).projectOnVector(axis).add(axis)
-        thisMin = Math.min(thisMin, proj.length())
-        thisMax = Math.max(thisMax, proj.length())
+        let val = axis.dot(p)
+        if (thisMin > val) {
+          thisMin = val
+          thisMinP = p
+        }
+        if (thisMax < val) {
+          thisMax = val
+          thisMaxP = p
+        }
       }
-      let shapeMin = Infinity, shapeMax = 0
+      let shapeMin = Infinity, shapeMax = -Infinity
+      let shapeMinP, shapeMaxP
       for (let p of shapePoints) {
-        proj.copy(p).projectOnVector(axis).add(axis)
-        shapeMin = Math.min(shapeMin, proj.length())
-        shapeMax = Math.max(shapeMax, proj.length())
+        let val = axis.dot(p)
+        if (shapeMin > val) {
+          shapeMin = val
+          shapeMinP = p
+        }
+        if (shapeMax < val) {
+          shapeMax = val
+          shapeMaxP = p
+        }
       }
       if (thisMin > shapeMax || thisMax < shapeMin) {
         overlap.recycle()
         overlap = false
         break
       }
-      overlap.point.projectOnPlane(axis)
-      let overlapLen = Math.min(thisMax, shapeMax) - Math.max(thisMin, shapeMin)
-      let midOverlap = (Math.min(thisMax, shapeMax) + Math.max(thisMin, shapeMin)) / 2
-      proj.multiplyScalar(midOverlap / proj.length())
-      overlap.point.add(proj).sub(axis)
-      if (overlapLen < overlap.overlap.length()) {
-        overlap.overlap.copy(proj).multiplyScalar(-overlapLen / midOverlap)
+      // overlap.point.projectOnPlane(axis)
+      let overlapLen //= Math.min(thisMax, shapeMax) - Math.max(thisMin, shapeMin)
+      if (thisMax - shapeMin < shapeMax - thisMin) {
+        overlapLen = shapeMin - thisMax
+      } else {
+        overlapLen = shapeMax - thisMin
+      }
+      // let midOverlap = (Math.min(thisMax, shapeMax) + Math.max(thisMin, shapeMin)) / 2
+      // proj.multiplyScalar(midOverlap / proj.length())
+      // overlap.point.add(proj)//.sub(axis)
+      if (Math.abs(overlapLen) < overlap.overlap.length()) {
+        overlap.overlap.copy(axis).multiplyScalar(overlapLen)
+        let dist = proj.copy(midbb).sub(thisMinP).length()
+        let closest = dist
+        overlap.point.copy(thisMinP)
+        dist = proj.copy(midbb).sub(thisMaxP).length()
+        if (dist < closest) {
+          overlap.point.copy(thisMaxP)
+          closest = dist
+        }
+        dist = proj.copy(midbb).sub(shapeMinP).length()
+        if (dist < closest) {
+          overlap.point.copy(shapeMinP)
+          closest = dist
+        }
+        dist = proj.copy(midbb).sub(shapeMaxP).length()
+        if (dist < closest) {
+          overlap.point.copy(shapeMaxP)
+          closest = dist
+        }
       }
     }
+
     proj.recycle()
+    midbb.recycle()
     return overlap
   }
   overlaps(shape) { }
@@ -520,7 +679,7 @@ SPE.Box = class extends SPE.Shape {
       for (let i = 0; i < axes.length; i++) {
         let axis = axes[i]
         let axisshape = i % 2 ? this : shape
-        axis.applyQuaternion(axisshape.worldQuaternion).multiplyScalar(max)
+        axis.applyQuaternion(axisshape.worldQuaternion)//.multiplyScalar(max)
       }
       overlap = this.sat(axes, thisPoints, shapePoints, overlap)
       while (thisPoints.length) thisPoints.pop().recycle()
@@ -564,7 +723,7 @@ SPE.Box = class extends SPE.Shape {
       overlap.overlap.x = max * 2
       for (let i = 0; i < axes.length; i++) {
         let axis = axes[i]
-        axis.applyQuaternion(this.worldQuaternion).multiplyScalar(max)
+        axis.applyQuaternion(this.worldQuaternion)//.multiplyScalar(max)
       }
       overlap = this.sat(axes, thisPoints, shapePoints, overlap)
       while (thisPoints.length) thisPoints.pop().recycle()

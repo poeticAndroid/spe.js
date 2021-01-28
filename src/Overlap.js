@@ -11,7 +11,7 @@ SPE.Overlap = class {
     return SPE._OverlapPool.pop() || new SPE.Overlap()
   }
   recycle() {
-    this.point.set(0)
+    // this.point.set(0)
     SPE._OverlapPool.push(this)
   }
   flip() {

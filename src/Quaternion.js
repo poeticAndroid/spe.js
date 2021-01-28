@@ -117,4 +117,70 @@ SPE.Quaternion = class {
 
     return this
   }
+
+  slerp(qb, t) {
+    if (t === 0) return this;
+    if (t === 1) return this.copy(qb);
+
+    const x = this.x, y = this.y, z = this.z, w = this.w;
+
+    // http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/
+
+    let cosHalfTheta = w * qb.w + x * qb.x + y * qb.y + z * qb.z;
+
+    if (cosHalfTheta < 0) {
+
+      this.w = - qb.w;
+      this.x = - qb.x;
+      this.y = - qb.y;
+      this.z = - qb.z;
+
+      cosHalfTheta = - cosHalfTheta;
+
+    } else {
+
+      this.copy(qb);
+
+    }
+
+    if (cosHalfTheta >= 1.0) {
+
+      this.w = w;
+      this.x = x;
+      this.y = y;
+      this.z = z;
+
+      return this;
+
+    }
+
+    const sqrSinHalfTheta = 1.0 - cosHalfTheta * cosHalfTheta;
+
+    if (sqrSinHalfTheta <= Number.EPSILON) {
+
+      const s = 1 - t;
+      this.w = s * w + t * this.w;
+      this.x = s * x + t * this.x;
+      this.y = s * y + t * this.y;
+      this.z = s * z + t * this.z;
+
+      this.normalize();
+
+      return this;
+
+    }
+
+    const sinHalfTheta = Math.sqrt(sqrSinHalfTheta);
+    const halfTheta = Math.atan2(sinHalfTheta, cosHalfTheta);
+    const ratioA = Math.sin((1 - t) * halfTheta) / sinHalfTheta,
+      ratioB = Math.sin(t * halfTheta) / sinHalfTheta;
+
+    this.w = (w * ratioA + this.w * ratioB);
+    this.x = (x * ratioA + this.x * ratioB);
+    this.y = (y * ratioA + this.y * ratioB);
+    this.z = (z * ratioA + this.z * ratioB);
+
+    return this;
+
+  }
 }
